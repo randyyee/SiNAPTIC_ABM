@@ -4,13 +4,14 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
+
 def main():
     # Model parameters
     num_providers = 3
     initial_num_patients = 1000
-    patient_incidence = 48 #(54/1000000) * initial_num_patients # Est. 17,500 new spinal cord injury cases each year
-    time_period = 365 # 1 step = 1 day, so 10 years 3650
-    additive_adoption_preference = 0.7 # Used in provider agent for  Example: 70% preference for additive manufacturing
+    patient_incidence = 48  # (54/1000000) * initial_num_patients # Est. 17,500 new spinal cord injury cases each year
+    time_period = 365  # 1 step = 1 day, so 10 years 3650
+    additive_adoption_preference = 0.7  # Used in provider agent for  Example: 70% preference for additive manufacturing
 
     # Create and run the model
     model = ImplantMarketModel(num_providers, initial_num_patients, patient_incidence, additive_adoption_preference)
@@ -37,13 +38,17 @@ def main():
 
     # Add summary for provider_data
     provider_summary = provider_data.groupby('provider_id').agg({
-        'surgeries_performed': 'sum'
+        'surgeries_performed': 'max'
     })
     print("\nProvider Summary:")
     print(provider_summary)
 
     # Add summary for patient_data grouped by health_state and manufacturer_id
-    patient_health_summary = patient_data.groupby(['manufacturer_id', 'health_status']).size().reset_index(name='counts')
+    # Filter for the last step
+    final_step = patient_data['step'].max()
+    final_step_data = patient_data[patient_data['step'] == final_step]
+    patient_health_summary = final_step_data.groupby(['manufacturer_id', 'health_status']).size().reset_index(
+        name='counts')
     print("\nPatient Health Summary:")
     print(patient_health_summary)
 
@@ -61,11 +66,11 @@ def main():
 
     # Calculate total utility for each manufacturer
     manufacturer_total_utility = patient_health_summary.groupby('manufacturer_id')['total_utility'].sum()
-    #print(manufacturer_total_utility)
+    # print(manufacturer_total_utility)
 
     # Calculate total number of patients for each manufacturer
     manufacturer_patient_counts = patient_health_summary.groupby('manufacturer_id')['counts'].sum()
-    #print(manufacturer_patient_counts)
+    # print(manufacturer_patient_counts)
 
     # Calculate average utility for each manufacturer
     average_utility = manufacturer_total_utility / manufacturer_patient_counts.astype(float)
