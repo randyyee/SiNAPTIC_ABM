@@ -20,19 +20,25 @@ class ManufacturerAgent(Agent):
         if self.inventory < self.initial_inventory:
             production_amount = self.initial_inventory - self.inventory
             self.inventory += production_amount
+            return production_amount
 
     def sell_implant(self, quantity):
         if self.inventory >= quantity:
             self.inventory -= quantity
-            revenue = quantity * (self.base_production_cost / self.profit_margin)
+            revenue = quantity * (self.adjusted_production_cost / self.profit_margin)
             self.sales_revenue += revenue
+
+    def calculate_costs(self):
+        return self.inventory * self.adjusted_production_cost
+
+    def get_costs(self):
+        return self.calculate_costs()
 
     def calculate_profit(self):
         return self.sales_revenue * self.profit_margin
 
+    def get_profit(self):
+        return self.calculate_profit()
+
     def step(self):
-        initial_inventory = self.inventory
         self.produce_implants()
-        produced = self.inventory - initial_inventory
-        print(
-            f"Manufacturer {self.unique_id} ({self.type_of_manufacturer}) produced {produced} implants, Inventory: {self.inventory}")

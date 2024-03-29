@@ -1,9 +1,12 @@
 from mesa import Agent
 import random
 
+
 # Define HealthcareProviderAgent
 # TODO implement patient feedback on implant preference
 # If implant not available go to other or wait?
+
+
 class HealthcareProviderAgent(Agent):
     def __init__(self, unique_id, model):
         super().__init__(unique_id, model)
@@ -50,6 +53,8 @@ class HealthcareProviderAgent(Agent):
         if manu_id in self.model.manufacturer_cumulative_outcomes:
             if health_status in self.model.manufacturer_cumulative_outcomes[manu_id]:
                 self.model.manufacturer_cumulative_outcomes[manu_id][health_status] += 1
+
+        patient.received_surgery = True
 
     def step(self):
         # Prioritize patients marked for urgent surgery

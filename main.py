@@ -1,4 +1,5 @@
 from implant_market_model import ImplantMarketModel
+import seaborn as sns
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
@@ -11,55 +12,69 @@ def main():
     time_period = 365 # 1 step = 1 day, so 10 years 3650
     additive_adoption_preference = 0.7 # Used in provider agent for  Example: 70% preference for additive manufacturing
 
-    # Collect cumulative data
-    cumulative_data = []
-
     # Create and run the model
     model = ImplantMarketModel(num_providers, initial_num_patients, patient_incidence, additive_adoption_preference)
     for i in range(time_period):  # Run for x steps
         model.step()  # Run the steps outlined in implantmarketmodel
 
-    #     outcomes = model.summarize_manufacturer_outcomes()  #
-    #     # Accumulate outcomes
-    #     if i > 0:
-    #         prev_outcomes = cumulative_data[-1]
-    #         for manu_id in outcomes:
-    #             for state in outcomes[manu_id]:
-    #                 outcomes[manu_id][state] += prev_outcomes[manu_id][state]
-    #     cumulative_data.append(outcomes)
-    #
-    # # Convert data to DataFrame
-    # rows = []
-    # for step, step_data in enumerate(cumulative_data):
-    #     for manu_id, manu_data in step_data.items():
-    #         for state, count in manu_data.items():
-    #             rows.append({"Step": step, "Manufacturer": manu_id, "Health State": state, "Count": count})
-    #
-    # df = pd.DataFrame(rows)
-    # # Assuming df is the DataFrame created previously
-    # # Organize the data for the bar chart
-    # pivot_df = df.pivot_table(index='Step', columns=['Manufacturer', 'Health State'], values='Count', fill_value=0)
-    # n_steps = len(pivot_df)
-    # fig, ax = plt.subplots()
-    # bar_container = ax.bar(range(len(pivot_df.columns)), [0] * len(pivot_df.columns), align='edge')
-    #
-    # # Set the axis labels and titles as needed
-    # ax.set_xticks(range(len(pivot_df.columns)))
-    # ax.set_xticklabels(['{} - {}'.format(manu, state) for manu, state in pivot_df.columns], rotation=45, ha='right')
-    # ax.set_ylabel('Count')
-    # ax.set_xlabel('Manufacturer - Health State')
-    # ax.set_title('Cumulative Health State Totals by Manufacturer Over Time')
-    #
-    # def animate(step):
-    #     # Update the heights of the bars
-    #     bar_heights = pivot_df.iloc[step].values
-    #     for bar, height in zip(bar_container.patches, bar_heights):
-    #         bar.set_height(height)
-    #     ax.set_ylim(0, max(bar_heights) * 1.1)  # Adjust y-axis limit for visibility
-    #
-    # ani = animation.FuncAnimation(fig, animate, frames=n_steps, repeat=False, interval=100)
-    #
-    # plt.tight_layout()
-    # plt.show()
+    # Write the DataFrames to CSV files after the model has finished running
+    manufacturer_data = pd.DataFrame(model.manufacturer_rows)
+    manufacturer_data.to_csv('manufacturer_data.csv', index=False)
+    provider_data = pd.DataFrame(model.provider_rows)
+    provider_data.to_csv('provider_data.csv', index=False)
+    patient_data = pd.DataFrame(model.patient_rows)
+    patient_data.to_csv('patient_data.csv', index=False)
+
+    # Printout model summary
+    manufacturer_summary = manufacturer_data.groupby('manufacturer_id').agg({
+        'revenue': 'sum',
+        'costs': 'sum',
+        'profit': 'sum',
+        'implants_produced': 'sum'
+    })
+    print("Manufacturer Summary:")
+    print(manufacturer_summary)
+
+    # Add summary for provider_data
+    provider_summary = provider_data.groupby('provider_id').agg({
+        'surgeries_performed': 'sum'
+    })
+    print("\nProvider Summary:")
+    print(provider_summary)
+
+    # Add summary for patient_data grouped by health_state and manufacturer_id
+    patient_health_summary = patient_data.groupby(['manufacturer_id', 'health_status']).size().reset_index(name='counts')
+    print("\nPatient Health Summary:")
+    print(patient_health_summary)
+
+    # Add utility values
+    utility_values = {
+        'minimal': 0.84,
+        'moderate': 0.61,
+        'severe': 0.55,
+        'crippled': 0.51,
+        'bedbound': 0.5
+    }
+    # Map health_status to utility values and multiply by counts
+    patient_health_summary['total_utility'] = patient_health_summary['health_status'].map(utility_values) * \
+                                              patient_health_summary['counts']
+
+    # Calculate total utility for each manufacturer
+    manufacturer_total_utility = patient_health_summary.groupby('manufacturer_id')['total_utility'].sum()
+    #print(manufacturer_total_utility)
+
+    # Calculate total number of patients for each manufacturer
+    manufacturer_patient_counts = patient_health_summary.groupby('manufacturer_id')['counts'].sum()
+    #print(manufacturer_patient_counts)
+
+    # Calculate average utility for each manufacturer
+    average_utility = manufacturer_total_utility / manufacturer_patient_counts.astype(float)
+    average_utility = average_utility.reset_index()
+    average_utility.columns = ['manufacturer_id', 'average_utility']
+
+    print("\nAverage Utility Summary:")
+    print(average_utility)
+
+
 if __name__ == "__main__":
     main()
