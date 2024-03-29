@@ -1,7 +1,10 @@
 from mesa import Agent
 
 # Define ManufacturerAgent
-# TODO add an adoption feature to optimize production (speed, cost, quality) based on # of orders filled
+# On-time manufacturing of implants for additive, silicon nitride, means that implants can be produced immediately
+# reducing risk of stockouts
+# TODO add an adoption feature to optimize production (speed, cost, quality,
+#  buy more machines if see consistently low inventory = increase production etc.) based on # of orders filled
 class ManufacturerAgent(Agent):
     def __init__(self, unique_id, model, type_of_manufacturer, cost_modifier):
         super().__init__(unique_id, model)
@@ -14,12 +17,16 @@ class ManufacturerAgent(Agent):
         self.production_capacity = 100  # Example capacity to replenish inventory
         self.sales_revenue = 0
         self.profit_margin = 0.3  # Example profit margin
-        self.production_strategy = lambda step: 1 if step % 2 == 0 else 0.5  # Example strategy
+        #self.production_strategy = lambda step: 1 if step % 2 == 0 else 0.5  # Example strategy
+        self.pending_implants = {}  # Record the number of implants to produce in the future for subtractive
 
     def produce_implants(self):
         if self.inventory < self.initial_inventory:
             production_amount = self.initial_inventory - self.inventory
-            self.inventory += production_amount
+            if self.type_of_manufacturer == 'subtractive':
+                self.pending_implants[self.model.schedule.steps + 1] = production_amount
+            else:
+                self.inventory += production_amount
             return production_amount
 
     def sell_implant(self, quantity):
@@ -42,3 +49,6 @@ class ManufacturerAgent(Agent):
 
     def step(self):
         self.produce_implants()
+        if self.type_of_manufacturer == 'subtractive' and self.model.schedule.steps in self.pending_implants:
+            self.inventory += self.pending_implants[self.model.schedule.steps]
+            del self.pending_implants[self.model.schedule.steps]

@@ -3,14 +3,18 @@ import random
 
 
 # Define HealthcareProviderAgent
+# TODO record manufacturer to track surgeries and outcomes here (note patient agent will also track manufacturer itself)
 # TODO implement patient feedback on implant preference
+# TODO mirror patient methods but for provider
+#  e.g. provider - give_treatment(queuing, capacity, manufacturer buy) , patient - get_treatment (track post-surgery health),
+#  conduct_followup, attend_followup
 # If implant not available go to other or wait?
 
 
 class HealthcareProviderAgent(Agent):
     def __init__(self, unique_id, model):
         super().__init__(unique_id, model)
-        self.patient_capacity = 20  # Example capacity
+        self.patient_capacity = 5  # Example capacity
         self.patients = []
         self.surgeries_performed = 0
         self.post_surgery_health_counts = {"minimal": 0, "moderate": 0, "severe": 0, "crippled": 0, "bedbound": 0}
@@ -66,5 +70,7 @@ class HealthcareProviderAgent(Agent):
         for patient in [p for p in self.patients if not p.needs_urgent_surgery]:
             if not patient.received_surgery:
                 self.perform_surgery(patient)
+            elif patient.model.schedule.steps == patient.next_follow_up:
+                patient.attend_follow_up()
         # Clear patient list at the end of each step
         self.patients.clear()

@@ -19,6 +19,7 @@ class ImplantMarketModel(Model):
         self.patient_incidence = patient_incidence
         self.follow_up_outcomes = []
         self.change_states = []
+        self.patients_waiting = []
 
         self.manufacturer_rows = []
         self.provider_rows = []
@@ -57,6 +58,10 @@ class ImplantMarketModel(Model):
         if new_patients_count > 0:
             print(f"{new_patients_count} new patients spawned this step")
 
+    def print_patients_waiting(self):
+        for step, num_patients in enumerate(self.patients_waiting):
+            print(f"Step {step}: {num_patients} patients waiting for surgery")
+
     def step(self):
         #self.datacollector.collect(self)
         #self.print_agent_summary()
@@ -64,6 +69,9 @@ class ImplantMarketModel(Model):
 
         self.try_spawn_patient()
         self.schedule.step()
+
+        self.patients_waiting.append(len([p for p in self.patients if not p.received_surgery]))
+        print(f"Step {self.schedule.steps}: {self.patients_waiting[-1]} patients waiting for surgery")
 
         # Record data for each agent at every step
         for manufacturer in self.manufacturers:
@@ -82,6 +90,7 @@ class ImplantMarketModel(Model):
             new_row = {
                 "step": self.schedule.steps,
                 "provider_id": provider.unique_id,
+                #"manufacturer_id": provider.manufacturer_id,
                 "surgeries_performed": provider.surgeries_performed,
                 "post_surgery_health_counts": provider.post_surgery_health_counts,
             }

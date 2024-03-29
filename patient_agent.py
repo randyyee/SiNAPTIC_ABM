@@ -28,9 +28,12 @@ class PatientAgent(Agent):
     def find_and_receive_treatment(self):
         available_providers = [provider for provider in self.model.providers if len(provider.patients) < provider.patient_capacity]
         if available_providers:
-            chosen_provider = self.random.choice(available_providers)
-            chosen_provider.receive_patient(self)
+            chosen_provider = self.random.choice(available_providers)  # Randomly choose a provider
+            chosen_provider.receive_patient(self)  # Receive the patient
             self.step_received_treatment = self.model.schedule.steps  # Record the step when the patient receives treatment
+        if self.needs_urgent_surgery:  # If the patient gets urgent surgery
+            self.needs_urgent_surgery = False
+            self.change_state = "Recovering"
 
     def schedule_next_follow_up(self):
         if not self.follow_up_intervals:

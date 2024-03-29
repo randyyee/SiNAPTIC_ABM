@@ -1,8 +1,5 @@
 from implant_market_model import ImplantMarketModel
-import seaborn as sns
 import pandas as pd
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
 
 
 def main():
@@ -11,7 +8,8 @@ def main():
     initial_num_patients = 1000
     patient_incidence = 48  # (54/1000000) * initial_num_patients # Est. 17,500 new spinal cord injury cases each year
     time_period = 365  # 1 step = 1 day, so 10 years 3650
-    additive_adoption_preference = 0.7  # Used in provider agent for  Example: 70% preference for additive manufacturing
+    additive_adoption_preference = 0.5  # Used in provider agent, starts at 50% preference for additive manufacturing
+    # to be modified over time
 
     # Create and run the model
     model = ImplantMarketModel(num_providers, initial_num_patients, patient_incidence, additive_adoption_preference)
@@ -26,7 +24,7 @@ def main():
     patient_data = pd.DataFrame(model.patient_rows)
     patient_data.to_csv('patient_data.csv', index=False)
 
-    # Printout model summary
+    # Printout model summaries
     manufacturer_summary = manufacturer_data.groupby('manufacturer_id').agg({
         'revenue': 'sum',
         'costs': 'sum',
