@@ -3,37 +3,54 @@ import random
 
 
 # Define HealthcareProviderAgent
-# TODO record manufacturer to track surgeries and outcomes here (note patient agent will also track manufacturer itself)
 # TODO implement patient feedback on implant preference
-# TODO mirror patient methods but for provider
-#  e.g. provider - give_treatment(queuing, capacity, manufacturer buy) , patient - get_treatment (track post-surgery health),
-#  conduct_followup, attend_followup
-# If implant not available go to other or wait?
+# TODO use before and after to figure out what to recommend
+# TODO make if so only the patient is recording the health states and the provider can collect from their list of patients when they need the data
+# TODO after collecting patient stats use that to determine which manufacturer to recommend
+# TODO If implant not available go to other manufacturer
 
 
 class HealthcareProviderAgent(Agent):
     def __init__(self, unique_id, model):
         super().__init__(unique_id, model)
-        self.patient_capacity = 5  # Example capacity
-        self.patients = []
-        self.surgeries_performed = 0
-        self.post_surgery_health_counts = {"minimal": 0, "moderate": 0, "severe": 0, "crippled": 0, "bedbound": 0}
+        self.patient_max_capacity = 20  # Max capacity
+        self.surgery_patients = []  # Keep track of patients needing surgery only, patients should be removed after receiving surgery
+        self.patient_capacity = self.patient_max_capacity - len(self.surgery_patients)  # Capacity is max_capacity - patients needing surgery
+        self.all_patients = []  # Keep track of all patients
+        self.follow_up_intervals = [6 * 7, 3 * 30, 6 * 30, 365, 2 * 365]  # 6 weeks, 3 month, 6 month, 1 year, 2 years
 
-    def receive_patient(self, patient):  # Receive patients, get implant, give them surgery
-        if len(self.patients) < self.patient_capacity:
-            self.patients.append(patient)  # Keep track of patients that received surgery from this provider
-            if random.random() < self.model.additive_adoption_preference:
-                chosen_manufacturer = next(m for m in self.model.manufacturers if m.type_of_manufacturer == 'additive')
-            else:
-                chosen_manufacturer = next(
-                    m for m in self.model.manufacturers if m.type_of_manufacturer == 'subtractive')
-            chosen_manufacturer.sell_implant(1)
-            patient.manufacturer_id = chosen_manufacturer.unique_id  # Record the manufacturer ID
-        #     print(f"Provider {self.unique_id} received patient {patient.unique_id} for surgery.")  # Uncomment to see everyone going to surgery
-        # else:
-        #     print(f"Provider {self.unique_id} is at capacity. Patient {patient.unique_id} could not be treated.")
+    def receive_patient(self, patient):  # Receive patients, get implant, perform surgery
+        patient.assigned_y_n = True  # Mark the patient as assigned
+        patient.health_status_history.append(('pre-surgery', patient.health_status))  # Have patient record their pre-surgery health status
+        health_states = self.get_patient_health_states()  # Get the health states
 
-    def perform_surgery(self, patient):
+        # Calculate the total rate of improvement for each manufacturer
+        additive_manufacturer_rate = health_states.get('additive', {}).get('improved', 0)
+        subtractive_manufacturer_rate = health_states.get('subtractive', {}).get('improved', 0)
+
+        # Adjust the additive_adoption_preference based on the rates
+        additive_adoption_preference = 1-(self.model.additive_adoption_preference * additive_manufacturer_rate)
+        # subtractive_adoption_preference = (1 - self.model.additive_adoption_preference) * subtractive_manufacturer_rate
+
+        # Use a random number to determine if the patient will go to additive or subtractive
+        if random.random() < additive_adoption_preference:
+            chosen_manufacturer = next((m for m in self.model.manufacturers if m.type_of_manufacturer == 'additive' and m.inventory > 0), None)
+            if chosen_manufacturer is None:  # If the chosen manufacturer doesn't have implants, switch to the other manufacturer
+                chosen_manufacturer = next((m for m in self.model.manufacturers if m.type_of_manufacturer == 'subtractive' and m.inventory > 0), None)
+        else:
+            chosen_manufacturer = next((m for m in self.model.manufacturers if m.type_of_manufacturer == 'subtractive' and m.inventory > 0), None)
+            if chosen_manufacturer is None:  # If the chosen manufacturer doesn't have implants, switch to the other manufacturer
+                chosen_manufacturer = next((m for m in self.model.manufacturers if m.type_of_manufacturer == 'additive' and m.inventory > 0), None)
+
+        # If a manufacturer with implants is found, sell an implant, otherwise unassign the patient
+        if chosen_manufacturer is not None:
+            chosen_manufacturer.sell_implant(1)  # Buy implant from manufacturer
+            patient.manufacturer_id = chosen_manufacturer.unique_id  # Record the manufacturer ID, provider will take this from patient
+        else:  # If no manufacturers have implants available, unassign the patient and have it go back for assignment in the next step
+            patient.assigned_y_n = False
+
+    # Surgery ---------------------------------------------------------------------------------------
+    def perform_surgery(self, patient):  # TODO make this different for manufacturer (i.e., type of implant)
         outcome_probabilities = {
             "minimal": 0.5,
             "moderate": 0.30,
@@ -46,31 +63,111 @@ class HealthcareProviderAgent(Agent):
             weights=list(outcome_probabilities.values()),
             k=1
         )[0]
-        self.surgeries_performed += 1
-        self.post_surgery_health_counts[patient.health_status] += 1
-        # print(f"Provider {self.unique_id} performed surgery on patient {patient.unique_id}. Post-surgery health: {patient.health_status}")
-        # Update the cumulative outcomes for the manufacturer
-        manu_id = patient.manufacturer_id
-        health_status = patient.health_status
 
-        # Check and update the outcomes
-        if manu_id in self.model.manufacturer_cumulative_outcomes:
-            if health_status in self.model.manufacturer_cumulative_outcomes[manu_id]:
-                self.model.manufacturer_cumulative_outcomes[manu_id][health_status] += 1
+        # Record the step when the patient received treatment
+        patient.step_received_treatment = self.model.schedule.steps
 
+        # Change flags post-surgery
         patient.received_surgery = True
+        patient.needs_urgent_surgery = False # Reset urgent surgery flag, ok since those receiving regular surgery will be FALSE anyway
+        # Record the step when the patient received surgery and their post-surgery health status
+        patient.health_status_history.append(('post-surgery', patient.health_status))  # Record post-surgery health status, if second post-surgery in history means they received urgent surgery
+        # Add patient to all_patients list after surgery
+        self.all_patients.append(patient)
+        # Finally, schedule all the follow-ups
+        patient.follow_up_steps = [self.model.schedule.steps + interval for interval in self.follow_up_intervals]
+        # Then set the next follow-up for the patient using the follow_up_steps list and next_follow_up_index
+        patient.next_follow_up = patient.follow_up_steps.pop(patient.next_follow_up_index)
 
+    # Follow-up -------------------------------------------------------------------------------------
+    def perform_follow_up(self, patient):
+        patient.next_follow_up_index += 1  # Increment next_follow_up_index, so we can get the next follow-up step at the end of the method
+
+        improvement_probabilities = {
+            "improved": 0.33,
+            "stable": 0.62,
+            "worse": 0.05
+        }
+
+        new_status = random.choices(
+            population=list(improvement_probabilities.keys()),
+            weights=list(improvement_probabilities.values()),
+            k=1
+        )[0]
+
+        if new_status == "improved":  # Chance for health_state to move to better if not already minimal
+            if patient.health_status != "minimal":
+                patient.health_status = "minimal"
+        elif new_status == "worse":  # Chance for health_state to move to worse if not already bedbound
+            if patient.health_status != "bedbound":
+                patient.health_status = "bedbound"
+                # Determine if patient needs urgent surgery for those who got worse
+                if random.random() < self.model.ae_probability:  # 50% chance of needing urgent surgery
+                    patient.needs_urgent_surgery = True
+                    patient.received_surgery = False
+                    self.surgery_patients.append(patient)  # Add patient back to surgery_patients list for urgent surgery
+
+        # Update patient's health_status_history
+        patient.health_status_history.append(('follow-up at step ' + str(self.model.schedule.steps),
+                                              patient.health_status))  # Record follow-up health status with model step
+        # Schedule the next follow-up based on the patient's follow_up_steps list
+        patient.next_follow_up = patient.follow_up_steps.pop(patient.next_follow_up_index)
+
+    # Analysis --------------------------------------------------------------------------------------
+    # This method summarizes the before and after health states for each manufacturer. Only the last health status and
+    # second to last is considered for each patient. Then the counts turned into rates for each manufacturer to determine
+    # the effectiveness of the implants.
+    def get_patient_health_states(self):
+        health_states = {}
+        health_state_order = ["minimal", "moderate", "severe", "crippled", "bedbound"]  # Define the order of health states
+
+        for patient in self.all_patients:
+            manufacturer_id = patient.manufacturer_id
+            before_health_state = patient.health_status_history[-2][1]  # Get the second to last health state
+            after_health_state = patient.health_status_history[-1][1]  # Get the last health state
+
+            # Compare the before and after health states and categorize them
+            if before_health_state is None or before_health_state == after_health_state:
+                category = "same"
+            elif health_state_order.index(before_health_state) > health_state_order.index(after_health_state):
+                category = "improved"
+            else:
+                category = "worsened"
+
+            # Increment the count of this category for this manufacturer
+            if manufacturer_id not in health_states:
+                health_states[manufacturer_id] = {"same": 0, "improved": 0, "worsened": 0}
+            health_states[manufacturer_id][category] += 1
+
+        # Convert counts to rates
+        for manufacturer_id, categories in health_states.items():
+            total = sum(categories.values())
+            for category, count in categories.items():
+                health_states[manufacturer_id][category] = count / total
+
+        return health_states
+
+    def get_surgeries_performed(self):
+        surgeries_performed = 0
+        for patient in self.all_patients:
+            surgeries_performed += sum(1 for status in patient.health_status_history if status[0] == 'post-surgery')
+        return surgeries_performed
+
+    # Step ------------------------------------------------------------------------------------------
     def step(self):
         # Prioritize patients marked for urgent surgery
-        urgent_patients = [p for p in self.patients if p.needs_urgent_surgery]
+        urgent_patients = [p for p in self.surgery_patients if p.needs_urgent_surgery]
         for patient in urgent_patients:
             self.perform_surgery(patient)
-            patient.needs_urgent_surgery = False
-        # Handle other patients
-        for patient in [p for p in self.patients if not p.needs_urgent_surgery]:
-            if not patient.received_surgery:
-                self.perform_surgery(patient)
-            elif patient.model.schedule.steps == patient.next_follow_up:
-                patient.attend_follow_up()
-        # Clear patient list at the end of each step
-        self.patients.clear()
+            self.surgery_patients.remove(patient)  # Remove patient from surgery_patients list after surgery
+
+        # Handle other patients (regular surgery and follow-up)
+        for patient in [p for p in self.surgery_patients if not p.needs_urgent_surgery]:
+            self.perform_surgery(patient)
+            self.surgery_patients.remove(patient)  # Remove patient from surgery_patients list after surgery
+        for patient in [p for p in self.all_patients if p.received_surgery]:
+            if self.model.schedule.steps == patient.next_follow_up:
+                self.perform_follow_up(patient)
+
+        # Update patient_capacity
+        self.patient_capacity = self.patient_max_capacity - len(self.surgery_patients)

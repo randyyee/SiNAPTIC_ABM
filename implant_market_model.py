@@ -9,18 +9,19 @@ from patient_agent import PatientAgent
 import random
 
 class ImplantMarketModel(Model):
-    def __init__(self, num_providers, initial_num_patients, patient_incidence, additive_adoption_preference):
+    def __init__(self, num_providers, initial_num_patients, patient_incidence, additive_adoption_preference, ae_probability):
         super().__init__()
         self.additive_adoption_preference = additive_adoption_preference
+        self.ae_probability = ae_probability
         self.schedule = RandomActivation(self)
         self.manufacturers = []
         self.providers = []
         self.patients = []
         self.patient_incidence = patient_incidence
-        self.follow_up_outcomes = []
-        self.change_states = []
         self.patients_waiting = []
-
+        # For tracking patients needing assignment
+        self.patients_needing_surgery = []
+        # For recording data
         self.manufacturer_rows = []
         self.provider_rows = []
         self.patient_rows = []
@@ -63,25 +64,39 @@ class ImplantMarketModel(Model):
             print(f"Step {step}: {num_patients} patients waiting for surgery")
 
     def step(self):
-        #self.datacollector.collect(self)
-        #self.print_agent_summary()
         print(f"Current step: {self.schedule.steps}")
 
+        # Try to spawn new patients
         self.try_spawn_patient()
+
+        # Update the list of patients needing surgery who are not assigned yet
+        self.patients_needing_surgery = [p for p in self.patients if not p.assigned_y_n]
+
+        # ---------------------------------------------------------------------------------------------
+        # Assign patients to providers
+        for patient in self.patients_needing_surgery:
+            available_providers = [provider for provider in self.providers if provider.patient_capacity > 0]
+            if available_providers:
+                provider = random.choice(available_providers)  # Select a provider randomly from the list of available providers
+                provider.surgery_patients.append(patient)  # Add patient to surgery_patients list first
+                provider.receive_patient(patient)  # Provider will then assign the patient to a manufacturer
+                self.patients_needing_surgery.remove(patient)
+
+        # ---------------------------------------------------------------------------------------------
+        # Execute all agents' step methods
         self.schedule.step()
 
-        self.patients_waiting.append(len([p for p in self.patients if not p.received_surgery]))
-        print(f"Step {self.schedule.steps}: {self.patients_waiting[-1]} patients waiting for surgery")
-
+        # ---------------------------------------------------------------------------------------------
         # Record data for each agent at every step
         for manufacturer in self.manufacturers:
             new_row = {
                 "step": self.schedule.steps,
                 "manufacturer_id": manufacturer.unique_id,
-                "revenue": round(manufacturer.sales_revenue,2),
-                "costs": round(manufacturer.get_costs(),2),
-                "profit": round(manufacturer.get_profit(),2),
+                "revenue": round(manufacturer.sales_revenue, 2),
+                "costs": round(manufacturer.get_costs(), 2),
+                "profit": round(manufacturer.get_profit(), 2),
                 "implants_produced": manufacturer.produce_implants(),
+                "inventory": manufacturer.inventory
             }
             print(f"Manufacturer new_row: {new_row}")
             self.manufacturer_rows.append(new_row)
@@ -89,10 +104,9 @@ class ImplantMarketModel(Model):
         for provider in self.providers:
             new_row = {
                 "step": self.schedule.steps,
-                "provider_id": provider.unique_id,
-                #"manufacturer_id": provider.manufacturer_id,
-                "surgeries_performed": provider.surgeries_performed,
-                "post_surgery_health_counts": provider.post_surgery_health_counts,
+                "provider_id": provider.unique_id#,
+                #"surgeries_performed": len(provider.before_after_health_counts),
+                #"post_surgery_health_counts": provider.before_after_health_counts, # TODO change to get from before_after_health_counts
             }
             print(f"Provider new_row: {new_row}")
             self.provider_rows.append(new_row)
@@ -106,9 +120,9 @@ class ImplantMarketModel(Model):
                 "days_waiting_for_surgery": patient.days_waiting_for_surgery,
                 "step_received_treatment": patient.step_received_treatment,
                 "manufacturer_id": patient.manufacturer_id,
-                "days_since_surgery": patient.days_since_surgery,
+                #"days_since_surgery": patient.days_since_surgery,
                 "next_follow_up": patient.next_follow_up,
-                "change_state": patient.change_state,
+                #"change_state": patient.change_state,
                 "needs_urgent_surgery": patient.needs_urgent_surgery,
                 "step_followup_treatment": patient.step_followup_treatment
             }

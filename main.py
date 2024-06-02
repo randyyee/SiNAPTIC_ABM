@@ -10,9 +10,10 @@ def main():
     time_period = 365  # 1 step = 1 day, so 10 years 3650
     additive_adoption_preference = 0.5  # Used in provider agent, starts at 50% preference for additive manufacturing
     # to be modified over time
+    ae_probability = 0.3  # Probability of adverse events
 
     # Create and run the model
-    model = ImplantMarketModel(num_providers, initial_num_patients, patient_incidence, additive_adoption_preference)
+    model = ImplantMarketModel(num_providers, initial_num_patients, patient_incidence, additive_adoption_preference, ae_probability)
     for i in range(time_period):  # Run for x steps
         model.step()  # Run the steps outlined in implantmarketmodel
 
@@ -33,13 +34,6 @@ def main():
     })
     print("Manufacturer Summary:")
     print(manufacturer_summary)
-
-    # Add summary for provider_data
-    provider_summary = provider_data.groupby('provider_id').agg({
-        'surgeries_performed': 'max'
-    })
-    print("\nProvider Summary:")
-    print(provider_summary)
 
     # Add summary for patient_data grouped by health_state and manufacturer_id
     # Filter for the last step
