@@ -5,9 +5,9 @@ import pandas as pd
 def main():
     # Model parameters
     num_providers = 3
-    initial_num_patients = 1000
+    initial_num_patients = 76
     patient_incidence = 48  # (54/1000000) * initial_num_patients # Est. 17,500 new spinal cord injury cases each year
-    time_period = 365  # 1 step = 1 day, so 10 years 3650
+    time_period = 200   # 1 step = 1 day, so 10 years 3650
     additive_adoption_preference = 0.5  # Used in provider agent, starts at 50% preference for additive manufacturing
     # to be modified over time
     ae_probability = 0.3  # Probability of adverse events
@@ -29,8 +29,8 @@ def main():
     manufacturer_summary = manufacturer_data.groupby('manufacturer_id').agg({
         'revenue': 'sum',
         'costs': 'sum',
-        'profit': 'sum',
-        'implants_produced': 'sum'
+        'profit': 'sum'#,
+        #'implants_produced': 'sum'
     })
     print("Manufacturer Summary:")
     print(manufacturer_summary)

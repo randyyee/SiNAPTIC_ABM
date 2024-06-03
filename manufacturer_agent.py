@@ -9,12 +9,14 @@ from mesa import Agent
 # TODO add workweek (production doesn't happen on weekends)
 # TODO add chance of machine breakdowns
 class ManufacturerAgent(Agent):
+
     def __init__(self, unique_id, model, type_of_manufacturer, cost_modifier):
         super().__init__(unique_id, model)
         self.type_of_manufacturer = type_of_manufacturer  # Either additive or subtractive
         self.machines = 2
-        self.initial_inventory = 10 # Define initial inventory
-        self.inventory = self.initial_inventory  # Start with the initial inventory
+        # self.initial_inventory = 0 # Define initial inventory
+        self.inventory = 0
+        self.total_orders = 0  # Keep track of total orders
         self.base_production_cost = 10  # Example base cost
         self.cost_modifier = cost_modifier  # How much cheaper should subtractive be, set in main
         self.adjusted_production_cost = self.base_production_cost * self.cost_modifier
@@ -22,24 +24,28 @@ class ManufacturerAgent(Agent):
         self.sales_revenue = 0
         self.profit_margin = 0.3  # Example profit margin
         #self.production_strategy = lambda step: 1 if step % 2 == 0 else 0.5  # Example strategy
-        self.pending_implants = {}  # Record the number of implants to produce in the future
+        self.pending_implants = 0  # Record the number of implants to produce in a future step
+        self.next_production_steps = 0  # Record the step when implants will be produced
+        self.production_history = {}
 
-    def produce_implants(self):  # TODO cap production rate using production_capacity
-        # print(f"Current inventory for manufacturer {self.unique_id}: {self.inventory}")
-        if self.inventory < self.initial_inventory:
-            production_amount = self.initial_inventory - self.inventory
-            # print(f"Producing {production_amount} implants")
-            if self.type_of_manufacturer == 'subtractive':
-                self.pending_implants[self.model.schedule.steps + 1] = production_amount
-            else:
-                self.inventory += production_amount
-            return production_amount
+    def schedule_implant_production(self):  # Schedule implants to be produced in future steps only if there are orders
+        # ... (existing code)
+        if self.type_of_manufacturer == 'subtractive':
+            self.production_history[self.model.schedule.steps + 2] = self.total_orders  # Change this line
+        else:
+            self.production_history[self.model.schedule.steps + 1] = self.total_orders  # Change this line
+        self.total_orders = 0  # Reset total orders
 
-    def sell_implant(self, quantity):
-        if self.inventory >= quantity:
-            self.inventory -= quantity
-            revenue = quantity * (self.adjusted_production_cost / self.profit_margin)
-            self.sales_revenue += revenue
+    def produce_implant(self, quantity):  # Produce implants and store in inventory
+        self.inventory += quantity  # Add implants to inventory
+
+    def order_implant(self, quantity):
+        self.total_orders += quantity  # Increase total orders
+        revenue = quantity * (self.adjusted_production_cost / self.profit_margin)
+        self.sales_revenue += revenue
+
+    def deliver_implant(self, quantity):
+        self.inventory -= quantity
 
     def calculate_costs(self):
         return self.inventory * self.adjusted_production_cost
@@ -54,8 +60,11 @@ class ManufacturerAgent(Agent):
         return self.calculate_profit()
 
     def step(self):
-        # print(f"Running step for manufacturer {self.unique_id}")
-        self.produce_implants()
-        if self.type_of_manufacturer == 'subtractive' and self.model.schedule.steps in self.pending_implants:
-            self.inventory += self.pending_implants[self.model.schedule.steps]
-            del self.pending_implants[self.model.schedule.steps]
+        # self.total_orders = 0  # Reset total orders for the step
+        # Schedule production of implants if there are orders
+        if self.total_orders > 0:
+            self.schedule_implant_production()
+        # Produce implants and store in inventory
+        if self.model.schedule.steps in self.production_history:
+            self.produce_implant(self.production_history[self.model.schedule.steps])
+        print(f"Pending: {self.pending_implants}")

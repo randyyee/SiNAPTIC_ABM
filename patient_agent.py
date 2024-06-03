@@ -12,9 +12,12 @@ class PatientAgent(Agent):
         super().__init__(unique_id, model)
         self.step_spawned = self.model.schedule.steps  # Record the step when the patient is spawned
         self.health_status = random.choice(["severe", "crippled", "bedbound"])  # Initial health status will be one of these poor states
-        self.health_status_history = []  # For recording entire health status history
+        self.health_status_history = []  # For recording entire health status history dictionary to record the health status at each step
         self.assigned_y_n = False  # Initialize assigned_y_n as False
+
         self.manufacturer_id = None  # Initialize manufacturer_id as None will record the manufacturer ID received
+        self.provider_id = None  # Initialize provider_id as None will record the provider ID received
+
         self.days_waiting_for_surgery = 0  # For counting days waiting for surgery
         self.received_surgery = False  # Initialize received_surgery as False
         self.step_received_treatment = None  # Initialize step_received_treatment as None
