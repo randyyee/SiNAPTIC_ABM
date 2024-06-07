@@ -15,6 +15,7 @@ Use the parameters on the sidebar to modify the model.''')
 
 with st.sidebar:
     st.header('Model Parameters')
+    st.write('Set your parameters before running the model.')
     num_providers = st.sidebar.number_input('Number of Providers', min_value=1, value=3)
     initial_num_patients = st.sidebar.number_input('Initial Number of Patients', min_value=1, value=1000)
     patient_incidence = st.sidebar.number_input('Patient Incidence', min_value=1, value=48)
