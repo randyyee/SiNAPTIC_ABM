@@ -9,7 +9,7 @@ st.set_page_config(
     layout="wide",
 )
 
-st.title('SiNAPTIC Agent-Based Model (ABM) Application')
+st.title('SiNAPTIC Agent-Based Model (ABM)')
 st.write('''This is an agent-based model for capturing competition between manufacturing types, a subtractive manufacturer making titanium implants vs. a 3D printing manufacturer (i.e., SiNAPTIC) making silicon nitride implants. The following agents will be included: manufacturers, healthcare providers (i.e., hospitals), and patients. 
 Use the parameters on the sidebar to modify the model.''')
 
@@ -119,9 +119,16 @@ if run_button:
         st.write("Average Utility Summary:")
         st.write(average_utility)
 
-    st.header('Manufacturer Data')
-    st.dataframe(manufacturer_data)
-    st.header('Provider Data')
-    st.dataframe(provider_data)
-    st.header('Patient Data')
-    st.dataframe(patient_data)
+    tab1, tab2, tab3 = st.tabs(["Manufacturer Data", "Provider Data", "Patient Data"])
+    
+    with tab1:
+        # st.header('Manufacturer Data')
+        st.dataframe(manufacturer_data)
+
+    with tab2:
+        # st.header('Provider Data')
+        st.dataframe(provider_data)
+    
+    with tab3:
+        # st.header('Patient Data')
+        st.dataframe(patient_data)
