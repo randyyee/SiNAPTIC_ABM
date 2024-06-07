@@ -9,8 +9,9 @@ st.set_page_config(
     layout="wide",
 )
 
-st.title('Implant Market Model App')
-st.text('This app allows you to run the Implant Market Model with your own parameters.')
+st.title('SiNAPTIC Agent-Based Model (ABM) Application')
+st.text('This is an agent-based model for capturing competition between manufacturing types, a subtractive manufacturer making titanium implants vs. a 3D printing manufacturer (i.e., SiNAPTIC) making silicon nitride implants. The following agents will be included: manufacturers, healthcare providers (i.e., hospitals), and patients. 
+Use the parameters on the sidebar to modify the model.')
 
 with st.sidebar:
     st.header('Model Parameters')
