@@ -1,4 +1,4 @@
-from mesa import Model
+import mesa
 from mesa.time import RandomActivation
 from mesa.datacollection import DataCollector
 import pandas as pd
@@ -8,7 +8,7 @@ from healthcare_provider_agent import HealthcareProviderAgent
 from patient_agent import PatientAgent
 import random
 
-class ImplantMarketModel(Model):
+class ImplantMarketModel(mesa.Model):
     def __init__(self, num_providers, initial_num_patients, patient_incidence, additive_adoption_preference, ae_probability):
         super().__init__()
         self.additive_adoption_preference = additive_adoption_preference
