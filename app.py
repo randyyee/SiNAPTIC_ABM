@@ -4,8 +4,8 @@ import pandas as pd
 import plotly.express as px
 
 st.set_page_config(
-    page_title="Real-Time Data Science Dashboard",
-    page_icon="✅",
+    page_title="SiNAPTIC Model Dashboard",
+    page_icon="",
     layout="wide",
 )
 
