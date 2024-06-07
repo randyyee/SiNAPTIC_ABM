@@ -120,16 +120,16 @@ if run_button:
         st.write("Average Utility Summary:")
         st.write(average_utility)
 
-    tab1, tab2, tab3 = st.tabs(["Manufacturer Data", "Provider Data", "Patient Data"])
+    # tab1, tab2, tab3 = st.tabs(["Manufacturer Data", "Provider Data", "Patient Data"])
     
-    with tab1:
+   # with tab1:
         # st.header('Manufacturer Data')
-        st.dataframe(manufacturer_data)
+       # st.dataframe(manufacturer_data)
 
-    with tab2:
+   # with tab2:
         # st.header('Provider Data')
-        st.dataframe(provider_data)
+       # st.dataframe(provider_data)
     
-    with tab3:
+   # with tab3:
         # st.header('Patient Data')
-        st.dataframe(patient_data)
+       # st.dataframe(patient_data)
