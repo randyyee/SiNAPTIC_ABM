@@ -41,7 +41,7 @@ if run_button:
     patient_data['manufacturer_id'] = patient_data['manufacturer_id'].map(manufacturer_id_mapping)
 
     # Display data in Streamlit
-    st.title('Implant Market Model Results')
+    st.title('Results')
 
     # Printout model summaries
     manufacturer_summary = manufacturer_data.groupby('manufacturer_id').agg({
