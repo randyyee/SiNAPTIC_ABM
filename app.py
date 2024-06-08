@@ -5,6 +5,21 @@ import time
 from implant_market_model import ImplantMarketModel
 import pandas as pd
 import plotly.express as px
+import matplotlib.pyplot as plt
+
+
+def plot_metrics(data, title):
+    fig, ax = plt.subplots()
+    for metric in ['revenue', 'cost', 'profit']:
+        # Pivot data for the current metric
+        pivoted_data = data.pivot(index='step', columns='manufacturer_id', values=metric)
+        # Plot each manufacturer's metric over time
+        pivoted_data.plot(ax=ax, label=metric)
+    plt.title(title)
+    plt.xlabel('Step')
+    plt.ylabel('Value')
+    plt.legend()
+    plt.show()
 
 
 st.set_page_config(
@@ -25,8 +40,8 @@ with st.sidebar:
     patient_incidence = st.sidebar.number_input('Patient Incidence', min_value=1, value=48)
     time_period = st.sidebar.number_input('Time Period', min_value=1, value=365)
     additive_adoption_preference = st.sidebar.slider('Additive Adoption Preference (0.50 means no preference for either manufacturer)', min_value=0.0, max_value=1.0, value=0.5)
-    ae_probability_additive = st.sidebar.slider('Adverse Events Probability (additive)', min_value=0.0, max_value=1.0, value=0.3)
-    ae_probability_subtractive = st.sidebar.slider('Adverse Events Probability (subtractive)', min_value=0.0, max_value=1.0, value=0.3)
+    ae_probability_additive = st.sidebar.slider('Adverse Events Probability (silicon nitride)', min_value=0.0, max_value=1.0, value=0.3)
+    ae_probability_subtractive = st.sidebar.slider('Adverse Events Probability (titanium)', min_value=0.0, max_value=1.0, value=0.3)
     run_button = st.button('Run Model')
 
 # col1, col2 = st.columns(2)
@@ -76,6 +91,10 @@ if run_button:
 
         manufacturer_data = pd.DataFrame(model.manufacturer_rows)
         manufacturer_data['manufacturer_id'] = manufacturer_data['manufacturer_id'].map(manufacturer_id_mapping)
+        # Filter data for additive and subtractive processes
+        additive_data = manufacturer_data[manufacturer_data['manufacturer_id'] == 'additive']
+        subtractive_data = manufacturer_data[manufacturer_data['manufacturer_id'] == 'subtractive']
+
         provider_data = pd.DataFrame(model.provider_rows)
         patient_data = pd.DataFrame(model.patient_rows)
         patient_data['manufacturer_id'] = patient_data['manufacturer_id'].map(manufacturer_id_mapping)
@@ -103,7 +122,7 @@ if run_button:
         patient_health_summary_pivot = patient_health_summary.pivot(index='manufacturer_id', columns='health_status',
                                                                     values='counts')
 
-        # Add utility values
+        # Add utility values TODO summarize utilities for every step of patient history instead of just last
         utility_values = {
             'minimal': 0.84,
             'moderate': 0.61,
@@ -129,16 +148,25 @@ if run_button:
         average_utility = average_utility.reset_index()
         average_utility.columns = ['manufacturer_id', 'average_utility']
 
-        # Display themanufacturer charts
+        # Display the manufacturer charts
+        # afig = pd.melt(additive_data, id_vars=['step', 'manufacturer_id'], value_vars=['revenue', 'costs', 'profit'], var_name='metric', value_name='value')
+        # sfig = pd.melt(subtractive_data, id_vars=['step', 'manufacturer_id'], value_vars=['revenue', 'costs', 'profit'], var_name='metric', value_name='value')
         chart_title_placeholder.write('Revenue by Manufacturer')
+        # chart_placeholder.line_chart(afig.pivot(index='step', columns='metric', values='value'))
         chart_placeholder.line_chart(manufacturer_data.pivot(index='step', columns='manufacturer_id', values='revenue'))
-
         chart_title_placeholder2.write('Profit by Manufacturer')
+        # chart_placeholder2.line_chart(sfig.pivot(index='step', columns='metric', values='value'))
         chart_placeholder2.line_chart(manufacturer_data.pivot(index='step', columns='manufacturer_id', values='profit'))
-
+        
         # Display the patient health status chart
         fighead_placeholder.write('Patient Health Summary by Manufacturer')
-        # Create a grouped bar chart with plotly
+        # Desired order of columns
+        columns_order = ['minimal', 'moderate', 'severe', 'crippled', 'bedbound']
+        # Filter columns_order to include only columns that exist in patient_health_summary_pivot
+        filtered_columns_order = [col for col in columns_order if col in patient_health_summary_pivot.columns]
+
+        # Reorder the columns in patient_health_summary_pivot using the filtered list
+        patient_health_summary_pivot = patient_health_summary_pivot[filtered_columns_order]
         fig = px.bar(patient_health_summary_pivot.reset_index(), x='manufacturer_id',
                     y=patient_health_summary_pivot.columns, barmode='group')
         # Display the grouped bar chart in Streamlit
