@@ -27,10 +27,10 @@ class ImplantMarketModel(mesa.Model):
 
         # Create one additive and one subtractive manufacturer
         additive_manufacturer = ManufacturerAgent(0, self, 'additive', 1.0)
-        subtractive_manufacturer = ManufacturerAgent(1, self, 'subtractive', 0.5)
-        self.manufacturer_cumulative_outcomes = {
-            0: {"minimal": 0, "moderate": 0, "severe": 0, "crippled": 0, "bedbound": 0},
-            1: {"minimal": 0, "moderate": 0, "severe": 0, "crippled": 0, "bedbound": 0}}
+        subtractive_manufacturer = ManufacturerAgent(1, self, 'subtractive', 1.0)
+        # self.manufacturer_cumulative_outcomes = {
+        #     0: {"minimal": 0, "moderate": 0, "severe": 0, "crippled": 0, "bedbound": 0},
+        #     1: {"minimal": 0, "moderate": 0, "severe": 0, "crippled": 0, "bedbound": 0}}
         self.manufacturers.extend([additive_manufacturer, subtractive_manufacturer])
         self.schedule.add(additive_manufacturer)
         self.schedule.add(subtractive_manufacturer)

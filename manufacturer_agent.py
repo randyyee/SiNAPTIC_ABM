@@ -67,4 +67,4 @@ class ManufacturerAgent(Agent):
         # Produce implants and store in inventory
         if self.model.schedule.steps in self.production_history:
             self.produce_implant(self.production_history[self.model.schedule.steps])
-        print(f"Pending: {self.pending_implants}")
+        # print(f"Pending: {self.pending_implants}")
