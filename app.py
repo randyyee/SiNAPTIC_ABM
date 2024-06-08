@@ -42,6 +42,7 @@ if run_button:
     patient_data['manufacturer_id'] = patient_data['manufacturer_id'].map(manufacturer_id_mapping)
 
     # Display data in Streamlit
+    st.divider()
     st.subheader('Results')
 
     # Printout model summaries
@@ -93,11 +94,9 @@ if run_button:
 
     # Display the line chart for revenue by manufacturer in the first column
     with tab1:
-        st.write('Revenue by Manufacturer')
         st.line_chart(manufacturer_data.pivot(index='step', columns='manufacturer_id', values='revenue'))
 
     with tab2:
-        st.write('Profit by Manufacturer')
         st.line_chart(manufacturer_data.pivot(index='step', columns='manufacturer_id', values='profit'))
 
     # Display the line chart for profit by manufacturer in the third column
