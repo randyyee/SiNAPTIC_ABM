@@ -1,6 +1,5 @@
 import mesa
 from mesa.time import RandomActivation
-from mesa.datacollection import DataCollector
 import pandas as pd
 # Import your agent classes
 from manufacturer_agent import ManufacturerAgent

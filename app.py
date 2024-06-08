@@ -4,7 +4,7 @@ import pandas as pd
 import plotly.express as px
 
 st.set_page_config(
-    page_title="SiNAPTIC Model Dashboard",
+    page_title="SiNAPTIC ABM",
     page_icon="",
     layout="wide",
 )
@@ -88,16 +88,15 @@ if run_button:
     average_utility = average_utility.reset_index()
     average_utility.columns = ['manufacturer_id', 'average_utility']
 
-    # Create two columns
-    col1, col2 = st.columns(2)
+    # Create two tabs
+    tab1, tab2 = st.tabs(["Revenue by Manufacturer", "Profit by Manufacturer"])
 
     # Display the line chart for revenue by manufacturer in the first column
-    with col1:
+    with tab1:
         st.write('Revenue by Manufacturer')
         st.line_chart(manufacturer_data.pivot(index='step', columns='manufacturer_id', values='revenue'))
 
-    # Display the patient health summary table in the second column
-    with col2:
+    with tab2:
         st.write('Profit by Manufacturer')
         st.line_chart(manufacturer_data.pivot(index='step', columns='manufacturer_id', values='profit'))
 
@@ -120,16 +119,16 @@ if run_button:
         st.write("Average Utility Summary:")
         st.write(average_utility)
 
-    # tab1, tab2, tab3 = st.tabs(["Manufacturer Data", "Provider Data", "Patient Data"])
+    # tab3, tab4, tab5 = st.tabs(["Manufacturer Data", "Provider Data", "Patient Data"])
     
-   # with tab1:
+   # with tab3:
         # st.header('Manufacturer Data')
        # st.dataframe(manufacturer_data)
 
-   # with tab2:
+   # with tab4:
         # st.header('Provider Data')
        # st.dataframe(provider_data)
     
-   # with tab3:
+   # with tab5:
         # st.header('Patient Data')
        # st.dataframe(patient_data)
