@@ -109,7 +109,14 @@ class HealthcareProviderAgent(Agent):
             if patient.health_status != "bedbound":
                 patient.health_status = "bedbound"
                 # Determine if patient needs urgent surgery for those who got worse
-                if random.random() < self.model.ae_probability:  # 50% chance of needing urgent surgery
+                
+                # Check manufacturer_id for patient
+                chosen_manufacturer = next((m for m in self.model.manufacturers if m.unique_id == patient.manufacturer_id), None)
+                if chosen_manufacturer.type_of_manufacturer == 'additive':
+                    ae_chance = self.model.ae_probability_additive
+                else:
+                    ae_chance = self.model.ae_probability_subtractive
+                if random.random() < ae_chance:  # 50% chance of needing urgent surgery
                     patient.needs_urgent_surgery = True
                     patient.received_surgery = False
                     self.surgery_patients.append(patient)  # Add patient back to surgery_patients list for urgent surgery

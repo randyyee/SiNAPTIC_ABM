@@ -25,7 +25,8 @@ with st.sidebar:
     patient_incidence = st.sidebar.number_input('Patient Incidence', min_value=1, value=48)
     time_period = st.sidebar.number_input('Time Period', min_value=1, value=365)
     additive_adoption_preference = st.sidebar.slider('Additive Adoption Preference (0.50 means no preference for either manufacturer)', min_value=0.0, max_value=1.0, value=0.5)
-    ae_probability = st.sidebar.slider('Adverse Events Probability', min_value=0.0, max_value=1.0, value=0.3)
+    ae_probability_additive = st.sidebar.slider('Adverse Events Probability (additive)', min_value=0.0, max_value=1.0, value=0.3)
+    ae_probability_subtractive = st.sidebar.slider('Adverse Events Probability (subtractive)', min_value=0.0, max_value=1.0, value=0.3)
     run_button = st.button('Run Model')
 
 # col1, col2 = st.columns(2)
@@ -33,7 +34,8 @@ col5, col6 = st.columns(2)
 
 if run_button:
     # Create and run the model
-    model = ImplantMarketModel(num_providers, initial_num_patients, patient_incidence, additive_adoption_preference, ae_probability)
+    model = ImplantMarketModel(num_providers, initial_num_patients, patient_incidence, 
+                               additive_adoption_preference, ae_probability_additive, ae_probability_subtractive)
     
     # Create placeholders for each element
     output_placeholder = st.empty()

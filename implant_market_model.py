@@ -8,10 +8,11 @@ from patient_agent import PatientAgent
 import random
 
 class ImplantMarketModel(mesa.Model):
-    def __init__(self, num_providers, initial_num_patients, patient_incidence, additive_adoption_preference, ae_probability):
+    def __init__(self, num_providers, initial_num_patients, patient_incidence, additive_adoption_preference, ae_probability_additive, ae_probability_subtractive):  
         super().__init__()
         self.additive_adoption_preference = additive_adoption_preference
-        self.ae_probability = ae_probability
+        self.ae_probability_additive = ae_probability_additive
+        self.ae_probability_subtractive = ae_probability_subtractive
         self.schedule = RandomActivation(self)
         self.manufacturers = []
         self.providers = []
