@@ -131,7 +131,7 @@ if run_button:
         chart_title_placeholder.write('Revenue by Manufacturer')
         chart_placeholder.line_chart(manufacturer_data.pivot(index='step', columns='manufacturer_id', values='revenue'))
 
-        chart_title_placeholder2.write('Revenue by Manufacturer')
+        chart_title_placeholder2.write('Profit by Manufacturer')
         chart_placeholder2.line_chart(manufacturer_data.pivot(index='step', columns='manufacturer_id', values='profit'))
 
         # Display the patient health status chart
